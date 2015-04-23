@@ -18,10 +18,10 @@ typedef enum {
     LWJSON_SM_ARRAY,                // Array
     LWJSON_SM_STRING,               // String
     LWJSON_SM_VALUE_END,            // Fin de valor
-    LWJSON_SM_NUMBER,               // Número
+    LWJSON_SM_NUMBER,               // NÃºmero
     LWJSON_SM_OBJECT_END,           // Fin de objeto
     LWJSON_SM_ARRAY_END,            // Fin de array
-    LWJSON_SM_END,                  // Fin de máquina de estados
+    LWJSON_SM_END,                  // Fin de mÃ¡quina de estados
     LWJSON_SM_ERROR                 // Error de parsing
 } LwJsonParserSM;
 
@@ -34,15 +34,15 @@ typedef struct {
 typedef struct {
     const char **path;
     const LwJsonMsg *msg;
-    LwJsonParentType stack[LWJSON_DEPTH_MAX + 1];   // Array con el tipo de padre del objeto actual (útil en parsing)
-    LwJsonParserSM state;                           // Estado actual para la máquina de estados
-    uint32_t depth;                                 // Valor de profundidad actual en la búsqueda o parsing
-    uint32_t findDepth;                             // Valor de profundidad de la última coincidencia con path
+    LwJsonParentType stack[LWJSON_DEPTH_MAX + 1];   // Array con el tipo de padre del objeto actual (Ãºtil en parsing)
+    LwJsonParserSM state;                           // Estado actual para la mÃ¡quina de estados
+    uint32_t depth;                                 // Valor de profundidad actual en la bÃºsqueda o parsing
+    uint32_t findDepth;                             // Valor de profundidad de la Ãºltima coincidencia con path
     uint32_t searchDepth;                           // Profundidad de path
     bool searchValuePending;                        // Path encontrado. Lectura de valor pendiente
     bool found;                                     // Flag que indica si se ha encontrado
-    char *lastName;                                 // Puntero a último nombre de propiedad
-    uint32_t currentArrayIndex;                     // Índice de elemento en array
+    char *lastName;                                 // Puntero a Ãºltimo nombre de propiedad
+    uint32_t currentArrayIndex;                     // Ãndice de elemento en array
     char *p;                                        // Puntero al caracter actual
     LwJsonFindResult *findResult;
 } LwJsonParser;
@@ -328,7 +328,7 @@ static void FindSmNameHandler(LwJsonParser *parser) {
     uint32_t nameLen;
 
     while (parser->state == LWJSON_SM_NAME) {
-        // Nombre. Puede encontrarse un carácter válido o el fin de nombre
+        // Nombre. Puede encontrarse un carÃ¡cter vÃ¡lido o el fin de nombre
         if ((parser->p[0]) == '"') {
             parser->state = LWJSON_SM_NAME_END;
             if ((parser->depth == (parser->findDepth + 1)) && (parser->findDepth < parser->searchDepth)) {
@@ -377,7 +377,7 @@ static void FindSmValueHandler(LwJsonParser *parser) {
         parser->state = LWJSON_SM_STRING;
         tempType = LWJSON_VAL_STRING;
     } else if ((currentChar == '-') || ((currentChar >= '0') && (currentChar <='9'))) {
-        // Sólo soporta enteros
+        // SÃ³lo soporta enteros
         parser->state = LWJSON_SM_NUMBER;
         tempType = LWJSON_VAL_NUMBER;
     } else if (currentChar == '[') {
@@ -385,7 +385,7 @@ static void FindSmValueHandler(LwJsonParser *parser) {
         parser->state = LWJSON_SM_ARRAY;
         lwJsonParserPush(parser, LWJSON_PARENT_ARRAY);
         if ((parser->depth == (parser->findDepth + 1)) && (parser->findDepth < parser->searchDepth)) {
-            // Comprobar si se busca este índice de array
+            // Comprobar si se busca este Ã­ndice de array
             sprintf(findArrayString, "[%u]", parser->currentArrayIndex);
             if (strcmp(parser->path[parser->findDepth], findArrayString) == 0) {
                 parser->findDepth++;
@@ -416,11 +416,11 @@ static void FindSmValueHandler(LwJsonParser *parser) {
 }
 
 static void FindSmStringHandler(LwJsonParser *parser) {
-    // Valor string. Puede encontrarse un carácter válido o el fin de nombre
+    // Valor string. Puede encontrarse un carÃ¡cter vÃ¡lido o el fin de nombre
     while (parser->state == LWJSON_SM_STRING) {
         if ((parser->p[0]) == '"') {
             parser->state = LWJSON_SM_VALUE_END;
-        } else if ((parser->p[0]) < 32) {
+        } else if (((uint32_t)(parser->p[0])) < 32) {
             parser->state = LWJSON_SM_ERROR;
         } else {
             parser->p++;
@@ -430,7 +430,7 @@ static void FindSmStringHandler(LwJsonParser *parser) {
 
 static void FindSmNumberHandler(LwJsonParser *parser) {
     while (parser->state == LWJSON_SM_NUMBER) {
-        // Sólo se soportan enteros. Si no se encuentra un entero, se pasa directamente a VALUE_END
+        // SÃ³lo se soportan enteros. Si no se encuentra un entero, se pasa directamente a VALUE_END
         if (((parser->p[0]) >= '0') && ((parser->p[0]) <= '9')) {
             parser->p++;
         } else {
@@ -474,7 +474,7 @@ static void FindSmValueEndHandler(LwJsonParser *parser) {
             if ((parser->depth == (parser->findDepth + 1)) && (parser->findDepth < parser->searchDepth)) {
                 // Update array search Index
                 parser->currentArrayIndex++;
-                // Comprobar si se busca este índice de array
+                // Comprobar si se busca este Ã­ndice de array
                 sprintf(findArrayString, "[%u]", parser->currentArrayIndex);
                 if (strcmp(parser->path[parser->findDepth], findArrayString) == 0) {
                     parser->findDepth++;
