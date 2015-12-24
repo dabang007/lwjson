@@ -27,6 +27,7 @@ typedef enum {
 
 typedef struct {
     uint32_t offset;
+    uint32_t skipSpace;
     uint32_t len;
     LwJsonValueType type;
 } LwJsonFindResult;
@@ -178,7 +179,7 @@ int lwJsonGetBool(const char **path, const LwJsonMsg *msg, bool *value) {
 
 static int lwJsonFindValue(const char **path, const LwJsonMsg *msg, LwJsonValueType expectedType, LwJsonMsg *value) {
     int result;
-    LwJsonFindResult findResult;
+    LwJsonFindResult findResult = {0};
 
     if (msg == NULL || value == NULL) {
         return -EINVAL;
@@ -193,7 +194,7 @@ static int lwJsonFindValue(const char **path, const LwJsonMsg *msg, LwJsonValueT
     }
 
     value->string = &msg->string[findResult.offset];
-    value->len = findResult.len;
+    value->len = findResult.len - findResult.skipSpace;
 
     return 0;
 }
@@ -221,6 +222,11 @@ static int lwJsonFind(const char **path, const LwJsonMsg *msg, LwJsonFindResult 
         // Filter chars
         PrefilterChar(parser.p);
         if (SkippableChar(parser.p[0])) {
+            if(parser.state == LWJSON_SM_VALUE_END){
+                if (parser.found && parser.depth == parser.searchDepth) {
+                    parser.findResult->skipSpace++;
+                }
+            }
             continue;
         }
 
@@ -362,7 +368,7 @@ static void FindSmNameEndHandler(LwJsonParser *parser) {
 
 static void FindSmValueHandler(LwJsonParser *parser) {
     char currentChar;
-    LwJsonValueType tempType;
+    LwJsonValueType tempType = LWJSON_VAL_NULL;
     char findArrayString[10];
 
     // Guardar offset si es necesario
